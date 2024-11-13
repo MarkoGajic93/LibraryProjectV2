@@ -29,7 +29,7 @@ class Author(db.Model):
     name = db.Column(db.String(255), nullable=False)
     biography = db.Column(db.Text)
 
-    books = db.relationship("Book", back_populates="author")
+    books = db.relationship("Book", back_populates="author", cascade="all, delete-orphan")
 
 class Warehouse(db.Model):
     __tablename__ = "warehouse"
@@ -37,7 +37,7 @@ class Warehouse(db.Model):
     name = db.Column(db.String(255), nullable=False)
     address = db.Column(db.Text, nullable=False)
 
-    books = db.relationship("WarehouseBook", back_populates="warehouse")
+    books = db.relationship("WarehouseBook", back_populates="warehouse", cascade="all, delete-orphan")
 
 class Book(db.Model):
     __tablename__ = "book"
@@ -48,7 +48,7 @@ class Book(db.Model):
     author_id = db.Column(PG_UUID(as_uuid=True), db.ForeignKey("author.id", ondelete="CASCADE"), nullable=False)
 
     author = db.relationship("Author", back_populates="books")
-    warehouses = db.relationship("WarehouseBook", back_populates="book")
+    warehouses = db.relationship("WarehouseBook", back_populates="book", cascade="all, delete-orphan")
 
     def __init__(self, title, year_published, author_id):
         self.title = title

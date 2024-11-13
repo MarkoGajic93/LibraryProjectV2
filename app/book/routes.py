@@ -97,7 +97,6 @@ def manage_copies(book_id: uuid.UUID):
             else:
                 new_warehouse_book = WarehouseBook(edit_form.warehouse.data, book_id, edit_form.quantity.data)
                 db.session.add(new_warehouse_book)
-
         try:
             db.session.commit()
             flash(f"Book {book.title} updated successfully.", "success")
@@ -106,7 +105,6 @@ def manage_copies(book_id: uuid.UUID):
             flash(f"An error occurred while updating the book: {e}.", "danger")
 
         return redirect(url_for('book.book', book_id=book_id))
-
     return render_template("edit_copies.html", book=book, editForm=edit_form)
 
 def get_book_data(book_id=None) -> Book | list[Book]:
@@ -121,15 +119,17 @@ def delete_all(book_id: uuid.UUID):
     if not is_admin():
         abort(401)
 
-    conn = get_db()
-    cursor = conn.cursor()
-    cursor.execute("""SELECT id, title FROM book WHERE id=%s""", (str(book_id),))
-    book_db_id, title = cursor.fetchone()
-    if book_db_id:
-        cursor.execute("""DELETE FROM book WHERE id=%s""", (book_db_id,))
-        conn.commit()
-        flash(f"Book {title} deleted successfully from all warehouses.", "success")
-    else:
-        flash(f"Book {title} doesnt exist.", "danger")
+    book = Book.query.filter_by(id=book_id).first()
+    if not book:
+        flash(f"Book doesnt exist.", "danger")
+        return redirect(url_for("home.home"))
+
+    db.session.delete(book)
+    try:
+        db.session.commit()
+        flash(f"Book {book.title} deleted successfully from all warehouses.", "success")
+    except Exception as e:
+        db.session.rollback()
+        flash(f"An error occurred while updating the book: {e}.", "danger")
     return redirect(url_for("home.home"))
 
