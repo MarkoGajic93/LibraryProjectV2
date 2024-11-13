@@ -4,6 +4,7 @@ from werkzeug.utils import redirect
 
 from app.auth import auth_bp
 from app.auth.forms import MemberRegisterForm, MemberLoginForm
+from app.db_models import Member
 from db.db_service import get_db
 
 
@@ -31,17 +32,16 @@ def register():
 
 @auth_bp.route("/login", methods=["GET", "POST"])
 def login():
-    if get_current_user().get('email'):
+    if get_current_user().email:
         flash("You are already logged in.", "danger")
         return redirect(url_for("home.home"))
 
-    conn = get_db()
-    cursor = conn.cursor()
     form = MemberLoginForm()
     if form.validate_on_submit():
-        cursor.execute("""SELECT email, name, password FROM member WHERE email=%s""", (form.email.data,))
-        email, name, hash_password = cursor.fetchone()
-        if check_password_hash(hash_password, form.password.data):
+        name, email, password = Member.query.with_entities(Member.name, Member.email, Member.password).filter_by(email=form.email.data).first()
+        if not email:
+            flash(f"Member with email: {form.email.data} doesnt exist", "danger")
+        if check_password_hash(password, form.password.data):
             session["user"] = {'email': email, 'name': name}
             flash(f"{name} logged in successfully", "success")
             return redirect(url_for("home.home"))
@@ -60,17 +60,13 @@ def logout():
         flash("You are not logged in.", "danger")
     return redirect(url_for("home.home"))
 
-def get_current_user() -> dict:
+def get_current_user() -> Member:
     _current_user = getattr(g, "_current_user", None)
     if not _current_user:
         if session.get("user"):
-            conn = get_db()
-            cursor = conn.cursor()
-            cursor.execute("""SELECT email, name, age, phone_number FROM member WHERE email=%s""", (session['user']['email'],))
-            email, name, age, phone = cursor.fetchone()
-            _current_user = g._current_user = {"email": email, "name": name, "age": age, "phone": phone}
+            _current_user = g._current_user = Member.query.filter_by(email=session['user']['email']).first()
         else:
-            _current_user = {}
+            _current_user = Member()
     return _current_user
 
 def is_admin(current_user) -> bool:

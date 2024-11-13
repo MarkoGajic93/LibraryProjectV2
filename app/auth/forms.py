@@ -32,10 +32,3 @@ class MemberLoginForm(FlaskForm):
                              validators=[InputRequired("Input is required"),
                                          DataRequired("Data is required")])
     submit = SubmitField("Login")
-
-    def validate_email(form, field):
-        conn = get_db()
-        cursor = conn.cursor()
-        cursor.execute("""SELECT email FROM member WHERE email=%s""", (field.data,))
-        if not cursor.fetchone():
-            raise ValidationError("There is no member with that email")
