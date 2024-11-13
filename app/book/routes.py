@@ -1,14 +1,13 @@
 import uuid
 
-from flask import render_template, flash, url_for, abort, g, current_app
+from flask import render_template, flash, url_for, abort
 from werkzeug.utils import redirect
 
 from app import db
-from app.auth.routes import is_admin, get_current_user
+from app.auth.routes import is_admin
 from app.book import book_bp
 from app.book.forms import NewBookForm, DeleteAllBooksForm, EditBookWarehouseCopies, RentBookForm
 from app.db_models import Book, WarehouseBook, Warehouse
-from db.db_service import get_db
 
 
 @book_bp.route("/new", methods=["GET", "POST"])
@@ -26,12 +25,16 @@ def add_new():
 
         # If not found - insert new record
         if not book_id:
-            book = Book(title=form.title.data, year_published=form.year_published.data, author_id=form.author.data)
+            book = Book(title=form.title.data.upper(), year_published=form.year_published.data, author_id=form.author.data)
             db.session.add(book)
             db.session.flush()
             warehouse_book = WarehouseBook(form.warehouse.data, book.id, form.quantity.data)
             db.session.add(warehouse_book)
-            db.session.commit()
+            try:
+                db.session.commit()
+            except Exception as e:
+                db.session.rollback()
+                flash(f"An error occurred while creating book: {e}.", "danger")
 
         # If found - no interaction with the book table, just update quantity in the warehouse
         else:
@@ -43,8 +46,12 @@ def add_new():
             else:
                 warehouse_book = WarehouseBook(form.warehouse.data, book_id, form.quantity.data)
             db.session.add(warehouse_book)
+        try:
             db.session.commit()
-        flash(f"Book: {form.title.data.upper()} added successfully.", "success")
+            flash(f"Book: {form.title.data.upper()} added successfully.", "success")
+        except Exception as e:
+            db.session.rollback()
+            flash(f"An error occurred while creating new book: {e}.", "danger")
         return redirect(url_for("home.home"))
 
     return render_template("new_book.html", form=form)
