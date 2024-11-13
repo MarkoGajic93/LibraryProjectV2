@@ -1,0 +1,37 @@
+{% extends 'base.html' %}
+
+{% block title %}{{ book.title }} - {% endblock %}
+
+{% block content %}
+<div class="row">
+  <div class="col-lg-3 my-4">
+    {% if current_user.get('email') == config['ADMIN_EMAIL'] %}
+    <a href="{{ url_for('book.manage_copies', book_id=book.id) }}" class="btn btn-primary">Manage copies</a>
+    <form class="delete-form" method="POST" action="{{ url_for('book.delete_all', book_id=book.id) }}">
+      {{ deleteAllBooksForm.hidden_tag() }}
+      {{ deleteAllBooksForm.submit(class="btn btn-danger", onclick="return confirm('Are you sure you want to delete all copies of this book from all warehouses?');") }}
+    </form>
+    {% elif current_user.get('email') %}
+    <form class="rent-form" method="POST" action="{{ url_for('rent.rent', book_id=book.id) }}">
+      {{ rentBookForm.hidden_tag() }}
+      {{ rentBookForm.submit(class="btn btn-primary", onclick="return confirm('This book will be added to your rent basket, proceed?');") }}
+    </form>
+    {% endif %}
+  </div>
+  <div class="col-lg-9">
+    <div class="card mt-4">
+      <div class="card-body">
+        <h3 class="card-title">{{ book.title }}</h3>
+        <a href="{{ url_for('author.author', author_id=book.author_id) }}"><h4>{{ book.author }}</h4></a>
+        <p class="card-text">Published: {{ book.year_published }}</p>
+        {% for k, v in book.warehouses.items() %}
+        <h4>
+          <div class="badge badge-secondary">{{ k }}:</div> <br>
+          <div class="badge badge-secondary">{{ v }} book(s) available</div>
+        </h4>
+        {% endfor %}
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}

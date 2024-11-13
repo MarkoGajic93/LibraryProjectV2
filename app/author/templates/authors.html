@@ -1,0 +1,45 @@
+{% extends 'base.html' %}
+{% set active_page = 'author' %}
+
+{% block content %}
+  <div class="row">
+    <div class="col-lg-3">
+      <div class="my-4">
+        {% if current_user.get('email') == config['ADMIN_EMAIL'] %}
+        <a href="{{ url_for('author.add_new') }}" class="btn btn-primary form-control">Add new author</a><hr>
+        <a href="{{ url_for('author.edit') }}" class="btn btn-secondary form-control">Edit author</a><hr>
+        <a href="{{ url_for('author.delete') }}" class="btn btn-danger form-control">Delete author</a><hr>
+        {% endif %}
+      </div>
+    </div>
+    <div class="col-lg-9">
+      <div class="row my-5 card-wrapper">
+        {% if authors %}
+        {% for author in authors %}
+        <div class="col-lg-4 col-md-6 mb-4">
+          <div class="card h-100">
+            <div class="card-body">
+              <h4 class="card-title">
+                <a href="{{ url_for('author.author', author_id=author.id) }}">{{ author.name }}</a>
+              </h4>
+            </div>
+            <div class="card-footer">
+              <small class="text-muted">
+                About:
+              </small>
+              <br>
+              <small class="text-muted">
+                {{ author.biography }}
+              </small>
+              <br>
+            </div>
+          </div>
+        </div>
+        {% endfor %}
+        {% else %}
+        <h1 class="offset-lg-3">No authors to show.</h1>
+        {% endif %}
+      </div>
+    </div>
+  </div>
+{% endblock %}

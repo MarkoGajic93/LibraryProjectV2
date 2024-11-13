@@ -1,0 +1,47 @@
+{% extends 'base.html' %}
+{% set active_page = 'home' %}
+
+{% block content %}
+  <div class="row">
+    <div class="col-lg-3">
+      <div class="my-4">
+
+      </div>
+    </div>
+    <div class="col-lg-9">
+      <div class="row my-5 card-wrapper">
+        {% if books %}
+        {% for book in books %}
+        <div class="col-lg-4 col-md-6 mb-4">
+          <div class="card h-100">
+            <div class="card-body">
+              <h4 class="card-title">
+                <a href="{{ url_for('book.book', book_id=book.id) }}">{{ book.title }}</a>
+              </h4>
+              <h5>{{ book.author }}</h5>
+              <p class="card-text">Published: {{ book.year_published }}</p>
+            </div>
+            <div class="card-footer">
+              <small class="text-muted">
+                Available:
+              </small>
+              <br>
+              {% set ns = namespace(total=0) %}
+              {% for k, v in book.warehouses.items() %}
+              {% set ns.total = ns.total+v %}
+              {% endfor %}
+              <small class="text-muted">
+                {{ ns.total }} book(s)
+              </small>
+              <br>
+            </div>
+          </div>
+        </div>
+        {% endfor %}
+        {% else %}
+        <h1 class="offset-lg-3">No books to show.</h1>
+        {% endif %}
+      </div>
+    </div>
+  </div>
+{% endblock %}

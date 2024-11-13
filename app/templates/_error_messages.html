@@ -1,0 +1,12 @@
+{% macro field_error_messages(field) %}
+{% if field.errors %}
+<br>
+<ul>
+{% for error in field.errors %}
+<li style="color:red">
+  {{ error }}
+</li>
+{% endfor %}
+</ul>
+{% endif %}
+{% endmacro %}

@@ -1,0 +1,39 @@
+{% extends 'base.html' %}
+{% set active_page = 'book' %}
+{% from "_error_messages.html" import field_error_messages %}
+{% block title %}Add new book - {% endblock %}
+
+{% block content %}
+<div class="row">
+  <div class="col-lg-7 offset-lg-2 my-5">
+    <h1>Add new book</h1><hr>
+    <form method="POST" action="{{ url_for('book.add_new') }}">
+      {{ form.hidden_tag() }}
+      <div class="form-group">
+        {{ form.title.label }}
+        {{ form.title(class="form-control") }}
+        {{ field_error_messages(form.title) }}
+      </div>
+      <div class="form-group">
+        {{ form.author.label }}
+        {{ form.author(class="form-control") }}
+      </div>
+      <div class="form-group">
+        {{ form.year_published.label }}
+        {{ form.year_published(class="form-control", type="numer") }}
+        {{ field_error_messages(form.year_published) }}
+      </div>
+      <div class="form-group">
+        {{ form.warehouse.label }}
+        {{ form.warehouse(class="form-control") }}
+      </div>
+      <div class="form-group">
+        {{ form.quantity.label }}
+        {{ form.quantity(class="form-control", type="number") }}
+      </div>
+      <hr>
+      {{ form.submit(class="btn btn-primary form-control") }}
+    </form>
+  </div>
+</div>
+{% endblock %}

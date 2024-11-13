@@ -1,0 +1,20 @@
+{% extends 'base.html' %}
+{% from "_error_messages.html" import field_error_messages %}
+{% block title %}Return book - {% endblock %}
+
+{% block content %}
+<div class="row">
+  <div class="col-lg-7 offset-lg-2 my-5">
+    <h1>Return book</h1><hr>
+    <form method="POST" action="{{ url_for('rent.return_book') }}">
+      {{ form.hidden_tag() }}
+      <div class="form-group">
+        {{ form.book.label }}
+        {{ form.book(class="form-control") }}
+      </div>
+      <hr>
+      {{ form.submit(class="btn btn-primary form-control") }}
+    </form>
+  </div>
+</div>
+{% endblock %}

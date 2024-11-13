@@ -1,0 +1,31 @@
+{% extends 'base.html' %}
+{% set active_page = 'warehouse' %}
+{% from "_error_messages.html" import field_error_messages %}
+{% block title %}Edit warehouse - {% endblock %}
+
+{% block content %}
+<div class="row">
+  <div class="col-lg-7 offset-lg-2 my-5">
+    <h1>Edit warehouse</h1><hr>
+    <form method="POST" action="{{ url_for('warehouse.edit') }}">
+      {{ form.hidden_tag() }}
+      <div class="form-group">
+        {{ form.warehouse.label }}
+        {{ form.warehouse(class="form-control") }}
+      </div>
+        <div class="form-group">
+        {{ form.name.label }}
+        {{ form.name(class="form-control") }}
+        {{ field_error_messages(form.name) }}
+      </div>
+      <div class="form-group">
+        {{ form.address.label }}
+        {{ form.address(class="form-control") }}
+        {{ field_error_messages(form.address) }}
+      </div>
+      <hr>
+      {{ form.submit(class="btn btn-primary form-control") }}
+    </form>
+  </div>
+</div>
+{% endblock %}

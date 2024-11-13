@@ -1,0 +1,21 @@
+{% extends 'base.html' %}
+{% block title %}{{ warehouse.name }} - {% endblock %}
+
+{% block content %}
+<div class="row">
+  <div class="col-lg-3 my-4">
+    {% for book in warehouse.books %}
+    <a href="{{ url_for('book.book', book_id=book.keys() | list | first) }}">{{ book.values() | list | first }}</a><br>
+    {% endfor %}
+  </div>
+  <div class="col-lg-9">
+    <div class="card mt-4">
+      <div class="card-body">
+        <h3 class="card-title">Warehouse:</h3>
+          <h2>{{ warehouse.name }}</h2><hr>
+        <p class="card-text">Address:<br>{{ warehouse.address }}</p>
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}

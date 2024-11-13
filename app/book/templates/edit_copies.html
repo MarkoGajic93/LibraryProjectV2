@@ -1,0 +1,28 @@
+{% extends 'base.html' %}
+{% block title %}Manage {{ book.title }} copies - {% endblock %}
+
+{% block content %}
+<div class="row">
+  <div class="col-lg-7 offset-lg-2 my-5">
+    <h1>
+      Manage book copies in warehouses:
+    </h1><hr>
+    <form method="POST" action="{{ url_for('book.manage_copies', book_id=book.id) }}">
+      {{ editForm.hidden_tag() }}
+      <div class="form-group">
+          <p>{{ book.author }}: {{ book.title }} (published - {{ book.year_published }})</p>
+      </div>
+      <div class="form-group">
+        {{ editForm.warehouse.label }}
+        {{ editForm.warehouse(class="form-control") }}
+      </div>
+      <div class="form-group">
+        {{ editForm.quantity.label }}
+        {{ editForm.quantity(class="form-control", type="number") }}
+      </div>
+      <hr>
+      {{ editForm.submit(class="btn btn-primary form-control") }}
+    </form>
+  </div>
+</div>
+{% endblock %}

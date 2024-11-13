@@ -1,0 +1,9 @@
+body {
+  padding-top: 56px;
+}
+.delete-form {
+  display: inline;
+}
+.rent-form input[type="submit"] {
+  width: 150px;
+}

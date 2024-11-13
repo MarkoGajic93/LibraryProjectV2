@@ -1,0 +1,32 @@
+{% extends 'base.html' %}
+{% set active_page = 'basket' %}
+
+{% block title %}{{ current_user.get('name') }} basket - {% endblock %}
+
+{% block content %}
+<div class="row">
+  <div class="col-lg-3 my-4">
+    <form class="rent-form" method="POST" action="{{ url_for('rent.checkout') }}">
+      {{ checkoutForm.hidden_tag() }}
+      {{ checkoutForm.submit(class="btn btn-primary", onclick="return confirm('Order all books in your basket?');") }}
+    </form><hr>
+    <form class="rent-form" method="POST" action="{{ url_for('rent.clear_basket') }}">
+      {{ restoreBasketForm.hidden_tag() }}
+      {{ restoreBasketForm.submit(class="btn btn-danger", onclick="return confirm('All books will be restored from your basket, proceed?');") }}
+    </form>
+  </div>
+  <div class="col-lg-9">
+    <div class="card mt-4">
+      <div class="card-body">
+        {% if books %}
+        {% for book in books %}
+        <h3 class="card-title">{{ book[0] }}</h3><hr>
+        {% endfor %}
+        {% else %}
+        <h3 class="card-title">Basket is empty</h3>
+        {% endif %}
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}
