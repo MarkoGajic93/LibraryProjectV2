@@ -43,6 +43,10 @@ class Warehouse(db.Model):
 
     books = db.relationship("WarehouseBook", back_populates="warehouse", cascade="all, delete-orphan")
 
+    def __init__(self, name, address):
+        self.name = name
+        self.address = address
+
 class Book(db.Model):
     __tablename__ = "book"
 
