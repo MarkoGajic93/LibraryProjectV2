@@ -21,6 +21,7 @@ class DevelopmentConfig(Config):
     DB_NAME = "library"
     ADMIN_EMAIL = "admin@example.com"
     try:
-        DATABASE = Config.get_db_uri(host=DB_HOST, db_name=DB_NAME)
+        SQLALCHEMY_DATABASE_URI = Config.get_db_uri(host=DB_HOST, db_name=DB_NAME)
     except ValueError as e:
         raise ValueError(f"Failed to configure database: {e}")
+    SQLALCHEMY_TRACK_MODIFICATIONS = False
