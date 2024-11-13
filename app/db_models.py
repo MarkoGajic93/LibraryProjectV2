@@ -31,6 +31,10 @@ class Author(db.Model):
 
     books = db.relationship("Book", back_populates="author", cascade="all, delete-orphan")
 
+    def __init__(self, name, biography):
+        self.name = name
+        self.biography = biography
+
 class Warehouse(db.Model):
     __tablename__ = "warehouse"
     id = db.Column(PG_UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
