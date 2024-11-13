@@ -1,7 +1,7 @@
 from flask_wtf import FlaskForm
 from wtforms.fields.choices import SelectField
 from wtforms.fields.simple import EmailField, StringField, SubmitField, PasswordField
-from wtforms.validators import InputRequired, DataRequired, Email, ValidationError
+from wtforms.validators import InputRequired, DataRequired, ValidationError
 
 from db.db_service import get_db
 

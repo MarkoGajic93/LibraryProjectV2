@@ -69,8 +69,8 @@ def get_current_user() -> Member:
             _current_user = Member()
     return _current_user
 
-def is_admin(current_user) -> bool:
-    return get_current_user().get("email") == current_app.config["ADMIN_EMAIL"]
+def is_admin() -> bool:
+    return get_current_user().email == current_app.config["ADMIN_EMAIL"]
 
 def restore_from_basket():
     basket = session.get("member_basket")
