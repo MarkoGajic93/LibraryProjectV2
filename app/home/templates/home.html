@@ -27,8 +27,8 @@
               </small>
               <br>
               {% set ns = namespace(total=0) %}
-              {% for k, v in book.warehouses.items() %}
-              {% set ns.total = ns.total+v %}
+              {% for warehouse in book.warehouses %}
+              {% set ns.total = ns.total+warehouse.quantity %}
               {% endfor %}
               <small class="text-muted">
                 {{ ns.total }} book(s)

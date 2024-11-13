@@ -6,6 +6,7 @@ from werkzeug.utils import redirect
 from app.auth.routes import is_admin, get_current_user
 from app.book import book_bp
 from app.book.forms import NewBookForm, DeleteAllBooksForm, EditBookWarehouseCopies, RentBookForm
+from app.db_models import Book
 from db.db_service import get_db
 
 
@@ -121,35 +122,11 @@ def manage_copies(book_id: uuid.UUID):
         flash("That book doesnt exist", "danger")
         return redirect(url_for("home.home"))
 
-def get_book_data(cursor, book_id=None) -> list[tuple]:
-    cursor.execute("""SELECT b.id, b.title, b.year_published, a.name, a.id, w.name, wb.quantity FROM book AS b
-                      INNER JOIN author AS a ON b.author_id=a.id
-                      INNER JOIN warehouse_book AS wb ON wb.book_id=b.id
-                      INNER JOIN warehouse AS w ON w.id=wb.warehouse_id WHERE b.id=COALESCE(%s, b.id)""",
-                   (str(book_id),) if book_id is not None else (None,))
-    return cursor.fetchall()
-
-def generate_book_dict(data: list[tuple]) -> dict:
-    book_dict = {}
-    for row in data:
-        book_id = row[0]
-        title = row[1]
-        year_published = row[2]
-        author = row[3]
-        author_id = row[4]
-        warehouse = row[5]
-        quantity = row[6]
-        if book_id not in book_dict:
-            book_dict[book_id] = {
-                'id': book_id,
-                'title': title,
-                'year_published': year_published,
-                'author': author,
-                'author_id': author_id,
-                'warehouses': {}
-            }
-        book_dict[book_id]['warehouses'][warehouse] = quantity
-    return book_dict
+def get_book_data(book_id=None) -> list[Book]:
+    if book_id:
+        book = Book.query.filter_by(id=book_id)
+        return list(book)
+    return Book.query.all()
 
 @book_bp.route("/delete_all/<uuid:book_id>", methods=["POST"])
 def delete_all(book_id: uuid.UUID):
