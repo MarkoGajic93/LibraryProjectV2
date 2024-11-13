@@ -57,17 +57,13 @@ def _setup_form() -> NewBookForm:
 
 @book_bp.route("/<uuid:book_id>")
 def book(book_id: uuid.UUID):
-    conn = get_db()
-    cursor = conn.cursor()
+
     delete_all_books_form = DeleteAllBooksForm()
     rent_book_form = RentBookForm()
-
-    book_data = get_book_data(cursor, book_id)
-    book_dict = {}
-    if book_data:
-        book_dict = next(iter(generate_book_dict(book_data).values()))
+    book = get_book_data(book_id)
+    if book:
         return render_template("book.html",
-                               book=book_dict,
+                               book=book,
                                deleteAllBooksForm=delete_all_books_form,
                                rentBookForm=rent_book_form)
     else:
@@ -118,11 +114,12 @@ def manage_copies(book_id: uuid.UUID):
         flash("That book doesnt exist", "danger")
         return redirect(url_for("home.home"))
 
-def get_book_data(book_id=None) -> list[Book]:
+def get_book_data(book_id=None) -> Book | list[Book]:
     if book_id:
-        book = Book.query.filter_by(id=book_id)
-        return list(book)
-    return Book.query.all()
+        books = Book.query.filter_by(id=book_id).first()
+    else:
+        books = Book.query.all()
+    return books
 
 @book_bp.route("/delete_all/<uuid:book_id>", methods=["POST"])
 def delete_all(book_id: uuid.UUID):
