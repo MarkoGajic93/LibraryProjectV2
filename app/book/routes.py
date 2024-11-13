@@ -7,7 +7,7 @@ from app import db
 from app.auth.routes import is_admin, get_current_user
 from app.book import book_bp
 from app.book.forms import NewBookForm, DeleteAllBooksForm, EditBookWarehouseCopies, RentBookForm
-from app.db_models import Book, WarehouseBook
+from app.db_models import Book, WarehouseBook, Warehouse
 from db.db_service import get_db
 
 
@@ -75,44 +75,39 @@ def manage_copies(book_id: uuid.UUID):
     if not is_admin():
         abort(401)
 
-    conn = get_db()
-    cursor = conn.cursor()
-
-    book_data = get_book_data(cursor, book_id)
-    book_dict = {}
-    if book_data:
-        edit_form = EditBookWarehouseCopies()
-        book_dict = next(iter(generate_book_dict(book_data).values()))
-        cursor.execute("""SELECT id, name FROM warehouse""")
-        warehouses = cursor.fetchall()
-        edit_form.warehouse.choices = warehouses
-
-        if edit_form.validate_on_submit():
-            selected_warehouse = next((warehouse[1] for warehouse in warehouses if warehouse[0] == edit_form.warehouse.data))
-
-            if edit_form.quantity.data == 0:
-                cursor.execute("""DELETE FROM warehouse_book WHERE warehouse_id=%s AND book_id=%s""",
-                               (edit_form.warehouse.data, book_dict["id"]))
-                if not get_book_data(cursor, book_dict["id"]):
-                    cursor.execute("""DELETE FROM book WHERE id=%s""", (book_dict["id"],))
-
-            if selected_warehouse in book_dict["warehouses"].keys():
-                cursor.execute("""UPDATE warehouse_book SET quantity=%s WHERE warehouse_id=%s AND book_id=%s""",
-                               (edit_form.quantity.data, edit_form.warehouse.data, book_dict["id"]))
-
-            else:
-                cursor.execute("""INSERT INTO warehouse_book (warehouse_id, book_id, quantity) VALUES (%s,%s,%s)""",
-                               (edit_form.warehouse.data, book_dict["id"], edit_form.quantity.data))
-
-            conn.commit()
-            flash(f"Book {book_dict['title']} updated successfully.", "success")
-            return redirect(url_for('book.book', book_id=book_id))
-
-        return render_template("edit_copies.html", book=book_dict, editForm=edit_form)
-
-    else:
-        flash("That book doesnt exist", "danger")
+    book = get_book_data(book_id)
+    if not book:
+        flash("That book doesn't exist.", "danger")
         return redirect(url_for("home.home"))
+
+    edit_form = EditBookWarehouseCopies()
+    edit_form.warehouse.choices = [(warehouse.id, warehouse.name) for warehouse in Warehouse.query.all()]
+
+    if edit_form.validate_on_submit():
+        warehouse_book = WarehouseBook.query.filter_by(warehouse_id=edit_form.warehouse.data, book_id=book_id).first()
+
+        if edit_form.quantity.data == 0:
+            if warehouse_book:
+                db.session.delete(warehouse_book)
+            if not book.warehouses:
+                db.session.delete(book)
+        else:
+            if warehouse_book:
+                warehouse_book.quantity = edit_form.quantity.data
+            else:
+                new_warehouse_book = WarehouseBook(edit_form.warehouse.data, book_id, edit_form.quantity.data)
+                db.session.add(new_warehouse_book)
+
+        try:
+            db.session.commit()
+            flash(f"Book {book.title} updated successfully.", "success")
+        except Exception as e:
+            db.session.rollback()
+            flash(f"An error occurred while updating the book: {e}.", "danger")
+
+        return redirect(url_for('book.book', book_id=book_id))
+
+    return render_template("edit_copies.html", book=book, editForm=edit_form)
 
 def get_book_data(book_id=None) -> Book | list[Book]:
     if book_id:
