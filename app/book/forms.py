@@ -6,6 +6,8 @@ from wtforms.fields.numeric import IntegerField
 from wtforms.fields.simple import StringField, SubmitField
 from wtforms.validators import InputRequired, DataRequired, NumberRange
 
+from app.db_models import Author, Warehouse
+
 
 class NewBookForm(FlaskForm):
     title = StringField("Title",
@@ -27,13 +29,11 @@ class NewBookForm(FlaskForm):
 
     submit = SubmitField("Add book")
 
-    def set_choices(self, cursor, field: Literal["author", "warehouse"]):
-        cursor.execute(f"SELECT id, name FROM {field}")
-        options = cursor.fetchall()
-        if field == "author":
-            self.author.choices = options
-        if field == "warehouse":
-            self.warehouse.choices = options
+    def set_choices(self, field: Literal["Author", "Warehouse"]):
+        if field == "Author":
+            self.author.choices = [(author.id, author.name) for author in Author.query.all()]
+        if field == "Warehouse":
+            self.warehouse.choices = [(warehouse.id, warehouse.name) for warehouse in Warehouse.query.all()]
 
 class DeleteAllBooksForm(FlaskForm):
     submit = SubmitField("Delete all")

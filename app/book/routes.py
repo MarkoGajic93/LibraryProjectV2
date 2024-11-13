@@ -3,60 +3,56 @@ import uuid
 from flask import render_template, flash, url_for, abort, g, current_app
 from werkzeug.utils import redirect
 
+from app import db
 from app.auth.routes import is_admin, get_current_user
 from app.book import book_bp
 from app.book.forms import NewBookForm, DeleteAllBooksForm, EditBookWarehouseCopies, RentBookForm
-from app.db_models import Book
+from app.db_models import Book, WarehouseBook
 from db.db_service import get_db
 
 
 @book_bp.route("/new", methods=["GET", "POST"])
 def add_new():
-    if not is_admin(get_current_user()):
+    if not is_admin():
         abort(401)
 
-    conn = get_db()
-    cursor = conn.cursor()
-    form = _setup_form(cursor)
+    form = _setup_form()
 
     if form.validate_on_submit():
         # Check if book already exist
         # (NOTE: criteria - books with same title, author and publish year are the same books, with same id)
-        cursor.execute("""SELECT id FROM book WHERE title=%s AND year_published=%s AND author_id=%s""",
-                       (form.title.data.upper(), form.year_published.data, form.author.data))
-        book_id = cursor.fetchone()
+        book_id = (Book.query.with_entities(Book.id).
+                   filter_by(title=form.title.data, year_published=form.year_published.data, author_id=form.author.data).first())
 
         # If not found - insert new record
         if not book_id:
-            cursor.execute("""INSERT INTO book (title, year_published, author_id) VALUES (%s,%s,%s) RETURNING id;""",
-                           (form.title.data.upper(), form.year_published.data, form.author.data))
-            book_id = cursor.fetchone()
-            cursor.execute("""INSERT INTO warehouse_book (warehouse_id, book_id, quantity) VALUES (%s,%s,%s)""",
-                           (form.warehouse.data, book_id, form.quantity.data))
+            book = Book(title=form.title.data, year_published=form.year_published.data, author_id=form.author.data)
+            db.session.add(book)
+            db.session.flush()
+            warehouse_book = WarehouseBook(form.warehouse.data, book.id, form.quantity.data)
+            db.session.add(warehouse_book)
+            db.session.commit()
 
         # If found - no interaction with the book table, just update quantity in the warehouse
         else:
+            warehouse_book = WarehouseBook.query.filter_by(warehouse_id=form.warehouse.data, book_id=book_id).first()
             # Check if book already have some copies in the selected warehouse
-            cursor.execute("""SELECT warehouse_id, quantity FROM warehouse_book WHERE book_id=%s AND warehouse_id=%s""",
-                           (book_id, form.warehouse.data))
-            try:
-                warehouse_id, quantity = cursor.fetchone()
-                cursor.execute("""UPDATE warehouse_book SET quantity=%s WHERE warehouse_id=%s AND book_id=%s""",
-                               (quantity + form.quantity.data, warehouse_id, book_id))
-            # If it doesn't, insert new entry in warehouse_book
-            except TypeError:
-                cursor.execute("""INSERT INTO warehouse_book (warehouse_id, book_id, quantity) VALUES (%s,%s,%s)""",
-                               (form.warehouse.data, book_id, form.quantity.data))
-        conn.commit()
+            if warehouse_book:
+                warehouse_book.quantity = warehouse_book.quantity+form.quantity.data
+            # If it doesn't, create new warehouse_book
+            else:
+                warehouse_book = WarehouseBook(form.warehouse.data, book_id, form.quantity.data)
+            db.session.add(warehouse_book)
+            db.session.commit()
         flash(f"Book: {form.title.data.upper()} added successfully.", "success")
         return redirect(url_for("home.home"))
 
     return render_template("new_book.html", form=form)
 
-def _setup_form(cursor) -> NewBookForm:
+def _setup_form() -> NewBookForm:
     form = NewBookForm()
-    form.set_choices(cursor, "author")
-    form.set_choices(cursor, "warehouse")
+    form.set_choices("Author")
+    form.set_choices("Warehouse")
     return form
 
 @book_bp.route("/<uuid:book_id>")
@@ -80,7 +76,7 @@ def book(book_id: uuid.UUID):
 
 @book_bp.route("/edit/<uuid:book_id>", methods=["GET", "POST"])
 def manage_copies(book_id: uuid.UUID):
-    if not is_admin(get_current_user()):
+    if not is_admin():
         abort(401)
 
     conn = get_db()
@@ -130,7 +126,7 @@ def get_book_data(book_id=None) -> list[Book]:
 
 @book_bp.route("/delete_all/<uuid:book_id>", methods=["POST"])
 def delete_all(book_id: uuid.UUID):
-    if not is_admin(get_current_user()):
+    if not is_admin():
         abort(401)
 
     conn = get_db()
