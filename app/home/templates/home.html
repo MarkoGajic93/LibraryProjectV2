@@ -18,7 +18,7 @@
               <h4 class="card-title">
                 <a href="{{ url_for('book.book', book_id=book.id) }}">{{ book.title }}</a>
               </h4>
-              <h5>{{ book.author }}</h5>
+              <h5>{{ book.author.name }}</h5>
               <p class="card-text">Published: {{ book.year_published }}</p>
             </div>
             <div class="card-footer">
