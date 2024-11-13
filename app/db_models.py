@@ -19,7 +19,7 @@ class Member(db.Model):
     def __init__(self, name="", email="", password="", age="", phone_number=""):
         self.name = name
         self.email = email
-        self.password_hash = generate_password_hash(password)
+        self.password = generate_password_hash(password)
         self.age = age
         self.phone_number = phone_number
 

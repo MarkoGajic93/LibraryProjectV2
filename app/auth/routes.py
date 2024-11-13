@@ -1,7 +1,8 @@
 from flask import render_template, flash, url_for, session, g, current_app
-from werkzeug.security import generate_password_hash, check_password_hash
+from werkzeug.security import check_password_hash
 from werkzeug.utils import redirect
 
+from app import db
 from app.auth import auth_bp
 from app.auth.forms import MemberRegisterForm, MemberLoginForm
 from app.db_models import Member
@@ -14,19 +15,21 @@ def inject_current_user():
 
 @auth_bp.route("/register", methods=["GET", "POST"])
 def register():
-    if get_current_user().get('email'):
+    if get_current_user().email:
         flash("You are already registered.", "danger")
         return redirect(url_for("home.home"))
 
     form = MemberRegisterForm()
     if form.validate_on_submit():
-        conn = get_db()
-        cursor = conn.cursor()
-        hashed_password = generate_password_hash(form.password.data)
-        cursor.execute("INSERT INTO member (email, name, password, age, phone_number) VALUES (%s,%s,%s,%s,%s)",
-                       (form.email.data, form.name.data, hashed_password, form.age.data, form.phone.data))
-        conn.commit()
-        flash(f"{form.name.data} successfully registered.", "success")
+        member = Member(form.name.data, form.email.data, form.password.data, form.age.data, form.phone.data)
+        db.session.add(member)
+        try:
+            db.session.commit()
+            flash(f"{form.name.data} successfully registered.", "success")
+        except Exception as e:
+            db.session.rollback()
+            flash(f"An error occurred while creating new member: {e}.", "danger")
+
         return redirect(url_for('home.home'))
     return render_template("register.html", form=form)
 

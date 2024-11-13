@@ -3,7 +3,7 @@ from wtforms.fields.choices import SelectField
 from wtforms.fields.simple import EmailField, StringField, SubmitField, PasswordField
 from wtforms.validators import InputRequired, DataRequired, ValidationError
 
-from db.db_service import get_db
+from app.db_models import Member
 
 
 class MemberRegisterForm(FlaskForm):
@@ -17,10 +17,8 @@ class MemberRegisterForm(FlaskForm):
     submit = SubmitField("Register")
 
     def validate_email(form, field):
-        conn = get_db()
-        cursor = conn.cursor()
-        cursor.execute("""SELECT email FROM member WHERE email=%s""", (field.data,))
-        if cursor.fetchone():
+        member = Member.query.filter_by(email=field.data).first()
+        if member:
             raise ValidationError("Email already exists.")
 
 class MemberLoginForm(FlaskForm):
