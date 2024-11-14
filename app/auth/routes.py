@@ -52,7 +52,7 @@ def login():
             logging.warning(f"Failed login attempt with non-existent email: {form.email.data}.")
             return render_template("login.html", form=form)
         if check_password_hash(member.password, form.password.data):
-            session["user"] = {'email': member.password, 'name': member.name}
+            session["user"] = {'email': form.email.data, 'name': member.name}
             flash(f"{member.name} logged in successfully", "success")
             logging.info(f"{member.name} logged in successfully.")
             return redirect(url_for("home.home"))
