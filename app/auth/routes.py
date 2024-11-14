@@ -1,3 +1,5 @@
+import logging
+
 from flask import render_template, flash, url_for, session, g, current_app
 from werkzeug.security import check_password_hash
 from werkzeug.utils import redirect
@@ -16,6 +18,7 @@ def inject_current_user():
 def register():
     if get_current_user().email:
         flash("You are already registered.", "danger")
+        logging.warning(f"Logged in user tried to register.")
         return redirect(url_for("home.home"))
 
     form = MemberRegisterForm()
@@ -25,9 +28,11 @@ def register():
         try:
             db.session.commit()
             flash(f"{form.name.data} successfully registered.", "success")
+            logging.info(f"{form.name.data} successfully registered.")
         except Exception as e:
             db.session.rollback()
             flash(f"An error occurred while creating new member: {e}.", "danger")
+            logging.warning(f"An error occurred while creating new member: {e}.")
 
         return redirect(url_for('home.home'))
     return render_template("register.html", form=form)
@@ -36,18 +41,23 @@ def register():
 def login():
     if get_current_user().email:
         flash("You are already logged in.", "danger")
+        logging.warning(f"Logged in user tried to login.")
         return redirect(url_for("home.home"))
 
     form = MemberLoginForm()
     if form.validate_on_submit():
-        name, email, password = Member.query.with_entities(Member.name, Member.email, Member.password).filter_by(email=form.email.data).first()
-        if not email:
+        member = Member.query.filter_by(email=form.email.data).first()
+        if not member:
             flash(f"Member with email: {form.email.data} doesnt exist", "danger")
-        if check_password_hash(password, form.password.data):
-            session["user"] = {'email': email, 'name': name}
-            flash(f"{name} logged in successfully", "success")
+            logging.warning(f"Failed login attempt with non-existent email: {form.email.data}.")
+            return render_template("login.html", form=form)
+        if check_password_hash(member.password, form.password.data):
+            session["user"] = {'email': member.password, 'name': member.name}
+            flash(f"{member.name} logged in successfully", "success")
+            logging.info(f"{member.name} logged in successfully.")
             return redirect(url_for("home.home"))
         flash("Incorrect password", "danger")
+        logging.warning(f"Failed login attempt with email: {form.email.data} (wrong password).")
     return render_template("login.html", form=form)
 
 @auth_bp.route("/logout")
@@ -58,8 +68,10 @@ def logout():
             session.pop("member_basket")
         user = session.pop("user")
         flash(f"{user['name']} logged out.", "success")
+        logging.info(f"{user['name']} logged out successfully.")
     except KeyError:
         flash("You are not logged in.", "danger")
+        logging.warning(f"Failed attempt to logout (user was not logged in).")
     return redirect(url_for("home.home"))
 
 def get_current_user() -> Member:
@@ -90,3 +102,4 @@ def restore_from_basket():
     except Exception as e:
         db.session.rollback()
         flash(f"An error occurred while restoring from basket: {e}.", "danger")
+        logging.warning(f"An error occurred while restoring from basket: {e}.")
