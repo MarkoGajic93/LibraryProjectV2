@@ -18,7 +18,7 @@
               <h4 class="card-title">
                 <a href="{{ url_for('book.book', book_id=book.id) }}">{{ book.title }}</a>
               </h4>
-              <h5>{{ book.author }}</h5>
+              <h5>{{ book.author.name }}</h5>
               <p class="card-text">Published: {{ book.year_published }}</p>
             </div>
             <div class="card-footer">
@@ -27,8 +27,8 @@
               </small>
               <br>
               {% set ns = namespace(total=0) %}
-              {% for k, v in book.warehouses.items() %}
-              {% set ns.total = ns.total+v %}
+              {% for warehouse in book.warehouses %}
+              {% set ns.total = ns.total+warehouse.quantity %}
               {% endfor %}
               <small class="text-muted">
                 {{ ns.total }} book(s)

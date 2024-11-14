@@ -3,6 +3,8 @@ from wtforms.fields.choices import SelectField
 from wtforms.fields.simple import StringField, TextAreaField, SubmitField
 from wtforms.validators import InputRequired, DataRequired, Length
 
+from app.db_models import Author
+
 
 class NewAuthorForm(FlaskForm):
     name = StringField("Name",
@@ -18,10 +20,8 @@ class DeleteAuthorForm(FlaskForm):
     author = SelectField("Author")
     submit = SubmitField("Submit")
 
-    def set_choices(self, cursor):
-        cursor.execute(f"SELECT id, name FROM author")
-        options = cursor.fetchall()
-        self.author.choices = options
+    def set_choices(self):
+        self.author.choices = [(author.id, author.name) for author in Author.query.all()]
 
 class EditAuthorForm(DeleteAuthorForm):
     name = StringField("Edit name",

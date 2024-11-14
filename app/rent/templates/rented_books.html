@@ -11,26 +11,28 @@
     <div class="col-lg-9">
       <div class="row my-5 card-wrapper">
         {% if rents %}
-        {% for book in rents[current_user['email']]['books'].values() | list %}
-        <div class="col-lg-4 col-md-6 mb-4">
-          <div class="card h-100">
-            <div class="card-body">
-              <h4 class="card-title">
-                {{ book }}
-              </h4>
-            </div>
-            <div class="card-footer">
-              <small class="text-muted">
-                Borrowed: {{ rents[current_user['email']].borrow_date }}
-              </small>
-              <br>
-              <small class="text-muted">
-                Return due: {{ rents[current_user['email']].return_date }}
-              </small>
-              <br>
+        {% for rent in rents %}
+          {% for book in rent.books %}
+          <div class="col-lg-4 col-md-6 mb-4">
+            <div class="card h-100">
+              <div class="card-body">
+                <h4 class="card-title">
+                  {{ book.book.title }}
+                </h4>
+              </div>
+              <div class="card-footer">
+                <small class="text-muted">
+                  Borrowed: {{ rent.borrow_date }}
+                </small>
+                <br>
+                <small class="text-muted">
+                  Return due: {{ rent.return_date }}
+                </small>
+                <br>
+              </div>
             </div>
           </div>
-        </div>
+          {% endfor %}
         {% endfor %}
         {% else %}
         <h1 class="offset-lg-3">You don't have any rented books.</h1>

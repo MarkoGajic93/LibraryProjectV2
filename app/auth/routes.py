@@ -1,10 +1,13 @@
+import logging
+
 from flask import render_template, flash, url_for, session, g, current_app
-from werkzeug.security import generate_password_hash, check_password_hash
+from werkzeug.security import check_password_hash
 from werkzeug.utils import redirect
 
+from app import db
 from app.auth import auth_bp
 from app.auth.forms import MemberRegisterForm, MemberLoginForm
-from db.db_service import get_db
+from app.db_models import Member, WarehouseBook
 
 
 @auth_bp.app_context_processor
@@ -13,39 +16,48 @@ def inject_current_user():
 
 @auth_bp.route("/register", methods=["GET", "POST"])
 def register():
-    if get_current_user().get('email'):
+    if get_current_user().email:
         flash("You are already registered.", "danger")
+        logging.warning(f"Logged in user tried to register.")
         return redirect(url_for("home.home"))
 
     form = MemberRegisterForm()
     if form.validate_on_submit():
-        conn = get_db()
-        cursor = conn.cursor()
-        hashed_password = generate_password_hash(form.password.data)
-        cursor.execute("INSERT INTO member (email, name, password, age, phone_number) VALUES (%s,%s,%s,%s,%s)",
-                       (form.email.data, form.name.data, hashed_password, form.age.data, form.phone.data))
-        conn.commit()
-        flash(f"{form.name.data} successfully registered.", "success")
+        member = Member(form.name.data, form.email.data, form.password.data, form.age.data, form.phone.data)
+        db.session.add(member)
+        try:
+            db.session.commit()
+            flash(f"{form.name.data} successfully registered.", "success")
+            logging.info(f"{form.name.data} successfully registered.")
+        except Exception as e:
+            db.session.rollback()
+            flash(f"An error occurred while creating new member: {e}.", "danger")
+            logging.warning(f"An error occurred while creating new member: {e}.")
+
         return redirect(url_for('home.home'))
     return render_template("register.html", form=form)
 
 @auth_bp.route("/login", methods=["GET", "POST"])
 def login():
-    if get_current_user().get('email'):
+    if get_current_user().email:
         flash("You are already logged in.", "danger")
+        logging.warning(f"Logged in user tried to login.")
         return redirect(url_for("home.home"))
 
-    conn = get_db()
-    cursor = conn.cursor()
     form = MemberLoginForm()
     if form.validate_on_submit():
-        cursor.execute("""SELECT email, name, password FROM member WHERE email=%s""", (form.email.data,))
-        email, name, hash_password = cursor.fetchone()
-        if check_password_hash(hash_password, form.password.data):
-            session["user"] = {'email': email, 'name': name}
-            flash(f"{name} logged in successfully", "success")
+        member = Member.query.filter_by(email=form.email.data).first()
+        if not member:
+            flash(f"Member with email: {form.email.data} doesnt exist", "danger")
+            logging.warning(f"Failed login attempt with non-existent email: {form.email.data}.")
+            return render_template("login.html", form=form)
+        if check_password_hash(member.password, form.password.data):
+            session["user"] = {'email': form.email.data, 'name': member.name}
+            flash(f"{member.name} logged in successfully", "success")
+            logging.info(f"{member.name} logged in successfully.")
             return redirect(url_for("home.home"))
         flash("Incorrect password", "danger")
+        logging.warning(f"Failed login attempt with email: {form.email.data} (wrong password).")
     return render_template("login.html", form=form)
 
 @auth_bp.route("/logout")
@@ -56,39 +68,38 @@ def logout():
             session.pop("member_basket")
         user = session.pop("user")
         flash(f"{user['name']} logged out.", "success")
+        logging.info(f"{user['name']} logged out successfully.")
     except KeyError:
         flash("You are not logged in.", "danger")
+        logging.warning(f"Failed attempt to logout (user was not logged in).")
     return redirect(url_for("home.home"))
 
-def get_current_user() -> dict:
+def get_current_user() -> Member:
     _current_user = getattr(g, "_current_user", None)
     if not _current_user:
         if session.get("user"):
-            conn = get_db()
-            cursor = conn.cursor()
-            cursor.execute("""SELECT email, name, age, phone_number FROM member WHERE email=%s""", (session['user']['email'],))
-            email, name, age, phone = cursor.fetchone()
-            _current_user = g._current_user = {"email": email, "name": name, "age": age, "phone": phone}
+            _current_user = g._current_user = Member.query.filter_by(email=session['user']['email']).first()
         else:
-            _current_user = {}
+            _current_user = Member()
     return _current_user
 
-def is_admin(current_user) -> bool:
-    return get_current_user().get("email") == current_app.config["ADMIN_EMAIL"]
+def is_admin() -> bool:
+    return get_current_user().email == current_app.config["ADMIN_EMAIL"]
 
 def restore_from_basket():
     basket = session.get("member_basket")
     if not basket:
         return
-    conn = get_db()
-    cursor = conn.cursor()
-    books_in_basket = basket[get_current_user().get("email")]
+
+    books_in_basket = basket[get_current_user().email]
     for book_id in books_in_basket.keys():
         warehouse_id = books_in_basket[book_id][1]
-        cursor.execute("""SELECT quantity FROM warehouse_book WHERE book_id=%s AND warehouse_id=%s""", (book_id, warehouse_id))
-        quantity = cursor.fetchone()[0]
-        cursor.execute("""UPDATE warehouse_book SET quantity=%s 
-                          WHERE warehouse_id=%s AND book_id=%s""",
-                       ((quantity + 1), warehouse_id, book_id))
-    conn.commit()
-    session.pop("member_basket")
+        warehouse_book = WarehouseBook.query.filter_by(warehouse_id=warehouse_id, book_id=book_id).first()
+        warehouse_book.quantity += 1
+    try:
+        db.session.commit()
+        session.pop("member_basket")
+    except Exception as e:
+        db.session.rollback()
+        flash(f"An error occurred while restoring from basket: {e}.", "danger")
+        logging.warning(f"An error occurred while restoring from basket: {e}.")
