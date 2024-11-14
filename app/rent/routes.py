@@ -1,7 +1,7 @@
 import uuid
 from datetime import datetime, timedelta
 
-from flask import flash, redirect, url_for, current_app, g, render_template, session
+from flask import flash, redirect, url_for, current_app, render_template, session
 from sqlalchemy.orm import joinedload
 
 from app import db
@@ -124,15 +124,20 @@ def return_book():
 
         rental_book = RentalBook.query.filter_by(rental_id=rental_id, book_id=form.book.data).first()
         db.session.delete(rental_book)
+        rental = Rental.query.options(joinedload(Rental.books)).get(rental_id)
         warehouse_book = WarehouseBook.query.filter_by(book_id=form.book.data).first()
         warehouse_book.quantity += 1
         db.session.add(warehouse_book)
         try:
             db.session.commit()
+            if not rental.books:
+                db.session.delete(rental)
+                db.session.commit()
             flash("Book returned successfully.", "success")
         except Exception as e:
             db.session.rollback()
             flash(f"An error occurred while returning a book: {e}.", "danger")
+
         return redirect(url_for("home.home"))
 
     return render_template("return_book.html", form=form)

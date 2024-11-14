@@ -20,11 +20,10 @@ def add_new():
     if form.validate_on_submit():
         # Check if book already exist
         # (NOTE: criteria - books with same title, author and publish year are the same books, with same id)
-        book_id = (Book.query.with_entities(Book.id).
-                   filter_by(title=form.title.data, year_published=form.year_published.data, author_id=form.author.data).first())
+        book = (Book.query.filter_by(title=form.title.data, year_published=form.year_published.data, author_id=form.author.data).first())
 
         # If not found - insert new record
-        if not book_id:
+        if not book:
             book = Book(title=form.title.data.upper(), year_published=form.year_published.data, author_id=form.author.data)
             db.session.add(book)
             db.session.flush()
@@ -38,13 +37,13 @@ def add_new():
 
         # If found - no interaction with the book table, just update quantity in the warehouse
         else:
-            warehouse_book = WarehouseBook.query.filter_by(warehouse_id=form.warehouse.data, book_id=book_id).first()
+            warehouse_book = WarehouseBook.query.filter_by(warehouse_id=form.warehouse.data, book_id=book.id).first()
             # Check if book already have some copies in the selected warehouse
             if warehouse_book:
                 warehouse_book.quantity = warehouse_book.quantity+form.quantity.data
             # If it doesn't, create new warehouse_book
             else:
-                warehouse_book = WarehouseBook(form.warehouse.data, book_id, form.quantity.data)
+                warehouse_book = WarehouseBook(form.warehouse.data, book.id, form.quantity.data)
             db.session.add(warehouse_book)
         try:
             db.session.commit()
