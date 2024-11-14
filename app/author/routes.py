@@ -8,7 +8,6 @@ from app.auth.routes import is_admin, get_current_user
 from app.author import author_bp
 from app.author.forms import NewAuthorForm, DeleteAuthorForm, EditAuthorForm
 from app.db_models import Author
-from db.db_service import get_db
 
 
 @author_bp.route("/<uuid:author_id>")

@@ -5,8 +5,7 @@ from werkzeug.utils import redirect
 from app import db
 from app.auth import auth_bp
 from app.auth.forms import MemberRegisterForm, MemberLoginForm
-from app.db_models import Member
-from db.db_service import get_db
+from app.db_models import Member, WarehouseBook
 
 
 @auth_bp.app_context_processor
@@ -79,15 +78,15 @@ def restore_from_basket():
     basket = session.get("member_basket")
     if not basket:
         return
-    conn = get_db()
-    cursor = conn.cursor()
-    books_in_basket = basket[get_current_user().get("email")]
+
+    books_in_basket = basket[get_current_user().email]
     for book_id in books_in_basket.keys():
         warehouse_id = books_in_basket[book_id][1]
-        cursor.execute("""SELECT quantity FROM warehouse_book WHERE book_id=%s AND warehouse_id=%s""", (book_id, warehouse_id))
-        quantity = cursor.fetchone()[0]
-        cursor.execute("""UPDATE warehouse_book SET quantity=%s 
-                          WHERE warehouse_id=%s AND book_id=%s""",
-                       ((quantity + 1), warehouse_id, book_id))
-    conn.commit()
-    session.pop("member_basket")
+        warehouse_book = WarehouseBook.query.filter_by(warehouse_id=warehouse_id, book_id=book_id).first()
+        warehouse_book.quantity += 1
+    try:
+        db.session.commit()
+        session.pop("member_basket")
+    except Exception as e:
+        db.session.rollback()
+        flash(f"An error occurred while restoring from basket: {e}.", "danger")

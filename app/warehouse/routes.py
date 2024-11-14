@@ -8,7 +8,6 @@ from app.auth.routes import is_admin
 from app.db_models import Warehouse
 from app.warehouse import warehouse_bp
 from app.warehouse.forms import NewWarehouseForm, EditWarehouseForm, DeleteWarehouseForm
-from db.db_service import get_db
 
 
 @warehouse_bp.route("/<uuid:warehouse_id>")
