@@ -1,12 +1,12 @@
 from flask import render_template
 
 from . import home_bp
-from ..book.routes import get_book_data
+from ..db_models import Book
 
 
 @home_bp.route("/")
 def home():
-    books = get_book_data()
+    books = Book.query.all()
 
     return render_template("home.html", books=books)
 

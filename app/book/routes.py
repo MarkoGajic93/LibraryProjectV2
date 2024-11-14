@@ -1,3 +1,4 @@
+import logging
 import uuid
 
 from flask import render_template, flash, url_for, abort
@@ -13,6 +14,7 @@ from app.db_models import Book, WarehouseBook, Warehouse
 @book_bp.route("/new", methods=["GET", "POST"])
 def add_new():
     if not is_admin():
+        logging.warning(f"Unauthorized attempt to create new book.")
         abort(401)
 
     form = _setup_form()
@@ -34,6 +36,7 @@ def add_new():
             except Exception as e:
                 db.session.rollback()
                 flash(f"An error occurred while creating book: {e}.", "danger")
+                logging.warning(f"An error occurred while creating book: {e}.")
 
         # If found - no interaction with the book table, just update quantity in the warehouse
         else:
@@ -48,9 +51,11 @@ def add_new():
         try:
             db.session.commit()
             flash(f"Book: {form.title.data.upper()} added successfully.", "success")
+            logging.info(f"Book: {form.title.data.upper()} added successfully.")
         except Exception as e:
             db.session.rollback()
             flash(f"An error occurred while creating new book: {e}.", "danger")
+            logging.warning(f"An error occurred while creating book: {e}.")
         return redirect(url_for("home.home"))
 
     return render_template("new_book.html", form=form)
@@ -66,7 +71,7 @@ def book(book_id: uuid.UUID):
 
     delete_all_books_form = DeleteAllBooksForm()
     rent_book_form = RentBookForm()
-    book = get_book_data(book_id)
+    book = Book.query.get(book_id)
     if book:
         return render_template("book.html",
                                book=book,
@@ -74,16 +79,19 @@ def book(book_id: uuid.UUID):
                                rentBookForm=rent_book_form)
     else:
         flash("That book doesnt exist", "danger")
+        logging.warning(f"Attempt to access non-existent book.")
         return redirect(url_for("home.home"))
 
 @book_bp.route("/edit/<uuid:book_id>", methods=["GET", "POST"])
 def manage_copies(book_id: uuid.UUID):
     if not is_admin():
+        logging.warning(f"Unauthorized attempt to edit book copies.")
         abort(401)
 
-    book = get_book_data(book_id)
+    book = Book.query.get(book_id)
     if not book:
         flash("That book doesn't exist.", "danger")
+        logging.warning(f"Attempt to manage copies of non-existent book.")
         return redirect(url_for("home.home"))
 
     edit_form = EditBookWarehouseCopies()
@@ -106,23 +114,19 @@ def manage_copies(book_id: uuid.UUID):
         try:
             db.session.commit()
             flash(f"Book {book.title} updated successfully.", "success")
+            logging.info(f"Book {book.title} updated successfully.")
         except Exception as e:
             db.session.rollback()
             flash(f"An error occurred while updating the book: {e}.", "danger")
+            logging.warning(f"An error occurred while updating the book: {e}.")
 
         return redirect(url_for('book.book', book_id=book_id))
     return render_template("edit_copies.html", book=book, editForm=edit_form)
 
-def get_book_data(book_id=None) -> Book | list[Book]:
-    if book_id:
-        books = Book.query.filter_by(id=book_id).first()
-    else:
-        books = Book.query.all()
-    return books
-
 @book_bp.route("/delete_all/<uuid:book_id>", methods=["POST"])
 def delete_all(book_id: uuid.UUID):
     if not is_admin():
+        logging.warning(f"Unauthorized attempt to delete book copies.")
         abort(401)
 
     book = Book.query.filter_by(id=book_id).first()
@@ -134,8 +138,10 @@ def delete_all(book_id: uuid.UUID):
     try:
         db.session.commit()
         flash(f"Book {book.title} deleted successfully from all warehouses.", "success")
+        logging.info(f"Book {book.title} deleted successfully from all warehouses.")
     except Exception as e:
         db.session.rollback()
-        flash(f"An error occurred while updating the book: {e}.", "danger")
+        flash(f"An error occurred while deleting the book: {e}.", "danger")
+        logging.warning(f"An error occurred while deleting the book: {e}.")
     return redirect(url_for("home.home"))
 

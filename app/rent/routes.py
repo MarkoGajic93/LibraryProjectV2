@@ -1,3 +1,4 @@
+import logging
 import uuid
 from datetime import datetime, timedelta
 
@@ -16,12 +17,14 @@ def rent(book_id: uuid.UUID):
     user = get_current_user()
     if not user.email:
         flash("You need to be logged in.", "danger")
+        logging.warning(f"Failed attempt to rent a book (user is not logged in).")
         return redirect(url_for("home.home"))
 
     if user.email != current_app.config["ADMIN_EMAIL"]:
         book = Book.query.get(book_id)
         if not book:
             flash("That book doesnt exist", "danger")
+            logging.warning(f"Attempt to rent non-existent book.")
             return redirect(url_for("home.home"))
         if book.warehouses:
             session.setdefault('member_basket', {})
@@ -29,6 +32,7 @@ def rent(book_id: uuid.UUID):
 
             if str(book_id) in user_basket:
                 flash("This book is already in your basket.", "danger")
+                logging.warning(f"Attempt to rent a book that is already in user basket.")
             else:
                 user_basket[str(book_id)] = [book.title, book.warehouses[0].warehouse_id]
                 warehouse_book = WarehouseBook.query.filter_by(warehouse_id=book.warehouses[0].warehouse_id, book_id=book.id).first()
@@ -37,17 +41,21 @@ def rent(book_id: uuid.UUID):
                 try:
                     db.session.commit()
                     flash("Book added to your rent basket.", "success")
+                    logging.info(f"Book added to user basket successfully.")
                 except Exception as e:
                     db.session.rollback()
                     flash(f"An error occurred while adding book to basket: {e}.", "danger")
+                    logging.warning(f"An error occurred while adding book to basket: {e}.")
         else:
             flash("Sorry, all copies of this book are currently rented", "danger")
+            logging.warning(f"Attempt to rent a book with no available copies.")
     return redirect(url_for("home.home"))
 
 @rent_bp.route("/basket")
 def view_basket():
     if not get_current_user().email:
         flash("You need to be logged in.", "danger")
+        logging.warning(f"Failed attempt to view basket (user is not logged in).")
         return redirect(url_for("home.home"))
 
     books_in_basket = get_basket()
@@ -59,10 +67,12 @@ def view_basket():
 def clear_basket():
     if not get_current_user().email:
         flash("You need to be logged in.", "danger")
+        logging.warning(f"Failed attempt to clear basket (user is not logged in).")
         return redirect(url_for("home.home"))
 
     restore_from_basket()
     flash("Basket cleared.", "success")
+    logging.info(f"User cleared basket successfully.")
     return redirect(url_for("home.home"))
 
 @rent_bp.route("/checkout", methods=["POST"])
@@ -70,11 +80,13 @@ def checkout():
     member_id = get_current_user().email
     if not member_id:
         flash("You need to be logged in.", "danger")
+        logging.warning(f"Failed attempt to make rent order (user is not logged in).")
         return redirect(url_for("home.home"))
 
     books = list(get_basket().keys())
     if not books:
         flash(f"Your basket is empty.", "danger")
+        logging.warning(f"Failed attempt to make rent order (user basket is empty).")
         return redirect(url_for("home.home"))
 
     rental = Rental(datetime.now().date(), datetime.now().date()+timedelta(days=14), member_id)
@@ -88,9 +100,11 @@ def checkout():
         basket = session.get("member_basket")
         basket.pop(get_current_user().email)
         flash("Order made successfully.", "success")
+        logging.info(f"User rent order created successfully.")
     except Exception as e:
         db.session.rollback()
         flash(f"An error occurred while making order: {e}.", "danger")
+        logging.warning(f"An error occurred while making order: {e}.")
 
     return redirect(url_for("home.home"))
 
@@ -99,6 +113,7 @@ def rents():
     member_id = get_current_user().email
     if not member_id:
         flash("You need to be logged in.", "danger")
+        logging.warning(f"Failed attempt to view rented books (user is not logged in).")
         return redirect(url_for("home.home"))
 
     rents = Rental.query.options(joinedload(Rental.books)).filter_by(member_id=member_id).all()
@@ -109,6 +124,7 @@ def return_book():
     member_id = get_current_user().email
     if not member_id:
         flash("You need to be logged in.", "danger")
+        logging.warning(f"Failed attempt to return a book (user is not logged in).")
         return redirect(url_for("home.home"))
 
     form = ReturnBookForm()
@@ -134,9 +150,11 @@ def return_book():
                 db.session.delete(rental)
                 db.session.commit()
             flash("Book returned successfully.", "success")
+            logging.info(f"Book returned successfully.")
         except Exception as e:
             db.session.rollback()
             flash(f"An error occurred while returning a book: {e}.", "danger")
+            logging.info(f"An error occurred while returning a book: {e}.")
 
         return redirect(url_for("home.home"))
 
