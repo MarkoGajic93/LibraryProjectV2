@@ -1,0 +1,31 @@
+{% extends 'base.html' %}
+{% set active_page = 'account' %}
+
+{% block content %}
+  <div class="row">
+    <div class="col-lg-3">
+      <div class="my-4">
+        <a href="#" class="btn btn-primary form-control">Update data</a><hr>
+        <a href="#" class="btn btn-secondary form-control">Change password</a><hr>
+        <a href="#" class="btn btn-danger form-control">Delete account</a><hr>
+      </div>
+    </div>
+    <div class="col-lg-9 my-4">
+      <form>
+        <h1>Member</h1><hr>
+        <div class="form-group">
+          <h4>name: {{ current_user.name }}</h4>
+        </div><br>
+        <div class="form-group">
+          <h4>email: {{ current_user.email }}</h4>
+        </div><br>
+        <div class="form-group">
+          <h4>age: {{ current_user.age }}</h4>
+        </div><br>
+        <div class="form-group">
+          <h4>phone number: {{ current_user.phone_number }}</h4>
+        </div><br>
+      </form>
+    </div>
+  </div>
+{% endblock %}
