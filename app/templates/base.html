@@ -32,6 +32,9 @@
           <li class="nav-item {{ 'active' if active_page == 'warehouse' else '' }}">
             <a href="{{ url_for('warehouse.view_all') }}" class="nav-link">Warehouses</a>
           </li>
+          <li class="nav-item {{ 'active' if active_page == 'accounts' else '' }}">
+            <a href="{{ url_for('account.view_all') }}" class="nav-link">Members</a>
+          </li>
           {% endif %}
           <li class="nav-item {{ 'active' if active_page == 'author' else '' }}">
             <a href="{{ url_for('author.view_all') }}" class="nav-link">Authors</a>

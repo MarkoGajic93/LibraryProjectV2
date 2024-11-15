@@ -78,6 +78,10 @@ def edit(member_id: str):
 
 @account_bp.route("/password/<string:member_id>", methods=["GET", "POST"])
 def change_password(member_id: str):
+    if get_current_user().email != member_id:
+        logging.warning("Unauthorized attempt to change member password.")
+        abort(401)
+
     form = ChangePasswordForm()
     user = Member.query.get(member_id)
     if form.validate_on_submit():
@@ -96,3 +100,12 @@ def change_password(member_id: str):
         flash("Incorrect old password", "danger")
         logging.warning(f"Failed change password attempt for user: {user.email} (wrong old password).")
     return render_template("change_password.html", form=form, member_id=member_id)
+
+@account_bp.route("/")
+def view_all():
+    if not is_admin():
+        logging.warning(f"Unauthorized attempt to view all members.")
+        abort(401)
+
+    members = Member.query.all()
+    return render_template("accounts.html", members=members)

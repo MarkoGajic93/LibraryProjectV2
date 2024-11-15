@@ -5,8 +5,10 @@
   <div class="row">
     <div class="col-lg-3">
       <div class="my-4">
+        {% if current_user.email != config['ADMIN_EMAIL'] %}
         <a href="{{ url_for('account.edit', member_id=user.email) }}" class="btn btn-primary form-control">Edit account</a><hr>
         <a href="{{ url_for('account.change_password', member_id=user.email) }}" class="btn btn-secondary form-control">Change password</a><hr>
+        {% endif %}
         <form method="POST" action="{{ url_for('account.delete', member_id=user.email) }}" onsubmit="return confirm('Are you sure you want to delete this account?')">
           <button type="submit" class="btn btn-danger form-control">Delete account</button>
         </form><hr>

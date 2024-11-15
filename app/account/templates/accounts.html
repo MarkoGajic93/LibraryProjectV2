@@ -1,0 +1,27 @@
+{% extends 'base.html' %}
+{% set active_page = 'accounts' %}
+
+{% block content %}
+  <div class="row">
+      {% if members %}
+        {% for member in members %}
+          <div class="col-lg-3 col-md-6 my-4">
+            <div class="card h-100">
+              <div class="card-body">
+                <h4 class="card-title">
+                  <a href="{{ url_for('account.member', member_id=member.email) }}">
+                    {{ member.name }}
+                  </a>
+                </h4>
+              </div>
+              <div class="card-footer">
+                <small class="text-muted">Age: {{ member.age }}</small>
+              </div>
+            </div>
+          </div>
+        {% endfor %}
+      {% else %}
+        <h1 class="offset-lg-3">No members to show.</h1>
+      {% endif %}
+  </div>
+{% endblock %}
