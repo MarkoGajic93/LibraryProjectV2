@@ -96,3 +96,12 @@ def change_password(member_id: str):
         flash("Incorrect old password", "danger")
         logging.warning(f"Failed change password attempt for user: {user.email} (wrong old password).")
     return render_template("change_password.html", form=form, member_id=member_id)
+
+@account_bp.route("/")
+def view_all():
+    if not is_admin():
+        logging.warning(f"Unauthorized attempt to view all members.")
+        abort(401)
+
+    members = Member.query.all()
+    return render_template("accounts.html", members=members)
