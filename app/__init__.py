@@ -35,4 +35,7 @@ def create_app(config_env = app_env):
     from app.rent import rent_bp
     app.register_blueprint(rent_bp, url_prefix="/rents")
 
+    from app.account import account_bp
+    app.register_blueprint(account_bp, url_prefix="/accounts")
+
     return app

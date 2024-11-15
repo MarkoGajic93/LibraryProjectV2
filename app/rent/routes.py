@@ -27,9 +27,7 @@ def rent(book_id: uuid.UUID):
             logging.warning(f"Attempt to rent non-existent book.")
             return redirect(url_for("home.home"))
         if book.warehouses:
-            session.setdefault('member_basket', {})
-            user_basket = session['member_basket'].setdefault(user.email, {})
-
+            user_basket = session["user"].setdefault('member_basket', {})
             if str(book_id) in user_basket:
                 flash("This book is already in your basket.", "danger")
                 logging.warning(f"Attempt to rent a book that is already in user basket.")
@@ -53,19 +51,21 @@ def rent(book_id: uuid.UUID):
 
 @rent_bp.route("/basket")
 def view_basket():
-    if not get_current_user().email:
+    user = get_current_user()
+    if not user.email:
         flash("You need to be logged in.", "danger")
         logging.warning(f"Failed attempt to view basket (user is not logged in).")
         return redirect(url_for("home.home"))
 
-    books_in_basket = get_basket()
+    books_in_basket = list(session["user"].get("member_basket", {}).values())
     restore_basket_form = RestoreBasketForm()
     checkout_form = CheckoutForm()
-    return render_template("basket.html", books=list(books_in_basket.values()), restoreBasketForm=restore_basket_form, checkoutForm=checkout_form)
+    return render_template("basket.html", books=books_in_basket, restoreBasketForm=restore_basket_form, checkoutForm=checkout_form)
 
 @rent_bp.route("/clear", methods=["POST"])
 def clear_basket():
-    if not get_current_user().email:
+    user = get_current_user()
+    if not user.email:
         flash("You need to be logged in.", "danger")
         logging.warning(f"Failed attempt to clear basket (user is not logged in).")
         return redirect(url_for("home.home"))
@@ -83,7 +83,7 @@ def checkout():
         logging.warning(f"Failed attempt to make rent order (user is not logged in).")
         return redirect(url_for("home.home"))
 
-    books = list(get_basket().keys())
+    books = list(session["user"].get("member_basket", {}).keys())
     if not books:
         flash(f"Your basket is empty.", "danger")
         logging.warning(f"Failed attempt to make rent order (user basket is empty).")
@@ -97,8 +97,7 @@ def checkout():
         db.session.add(rental_book)
     try:
         db.session.commit()
-        basket = session.get("member_basket")
-        basket.pop(get_current_user().email)
+        session["user"].pop("member_basket")
         flash("Order made successfully.", "success")
         logging.info(f"User rent order created successfully.")
     except Exception as e:
@@ -108,7 +107,7 @@ def checkout():
 
     return redirect(url_for("home.home"))
 
-@rent_bp.route("/rents")
+@rent_bp.route("/")
 def rents():
     member_id = get_current_user().email
     if not member_id:
@@ -159,10 +158,3 @@ def return_book():
         return redirect(url_for("home.home"))
 
     return render_template("return_book.html", form=form)
-
-def get_basket() -> dict:
-    basket = session.get("member_basket")
-    books_in_basket = {}
-    if basket:
-        books_in_basket = basket[get_current_user().email]
-    return books_in_basket

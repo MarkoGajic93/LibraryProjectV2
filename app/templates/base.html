@@ -45,8 +45,8 @@
             <a href="{{ url_for('rent.rents') }}" class="nav-link">Rented books</a>
           </li>
           {% endif %}
-          <li class="nav-item {{ 'active' if active_page == '' else '' }}">
-            <a href="#" class="nav-link">{{ current_user.name }}</a>
+          <li class="nav-item {{ 'active' if active_page == 'account' else '' }}">
+            <a href="{{ url_for('account.member', member_id=current_user.email) }}" class="nav-link">{{ current_user.name }}</a>
           </li>
           <li class="nav-item">
             <a href="{{ url_for('auth.logout') }}" onclick="return confirm('Are you sure you want to logout?');" class="nav-link">Logout</a>
