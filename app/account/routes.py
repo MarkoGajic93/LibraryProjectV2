@@ -78,6 +78,10 @@ def edit(member_id: str):
 
 @account_bp.route("/password/<string:member_id>", methods=["GET", "POST"])
 def change_password(member_id: str):
+    if get_current_user().email != member_id:
+        logging.warning("Unauthorized attempt to change member password.")
+        abort(401)
+
     form = ChangePasswordForm()
     user = Member.query.get(member_id)
     if form.validate_on_submit():
