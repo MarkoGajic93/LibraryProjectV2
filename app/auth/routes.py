@@ -63,9 +63,7 @@ def login():
 @auth_bp.route("/logout")
 def logout():
     try:
-        if session.get("member_basket"):
-            restore_from_basket()
-            session.pop("member_basket")
+        restore_from_basket()
         user = session.pop("user")
         flash(f"{user['name']} logged out.", "success")
         logging.info(f"{user['name']} logged out successfully.")
@@ -87,18 +85,17 @@ def is_admin() -> bool:
     return get_current_user().email == current_app.config["ADMIN_EMAIL"]
 
 def restore_from_basket():
-    basket = session.get("member_basket")
+    basket = session["user"].get("member_basket")
     if not basket:
         return
 
-    books_in_basket = basket[get_current_user().email]
-    for book_id in books_in_basket.keys():
-        warehouse_id = books_in_basket[book_id][1]
+    for book_id in basket.keys():
+        warehouse_id = basket[book_id][1]
         warehouse_book = WarehouseBook.query.filter_by(warehouse_id=warehouse_id, book_id=book_id).first()
         warehouse_book.quantity += 1
     try:
         db.session.commit()
-        session.pop("member_basket")
+        session["user"].pop("member_basket")
     except Exception as e:
         db.session.rollback()
         flash(f"An error occurred while restoring from basket: {e}.", "danger")
