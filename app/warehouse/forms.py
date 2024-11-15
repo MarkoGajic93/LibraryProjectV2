@@ -1,7 +1,7 @@
 from flask_wtf import FlaskForm
 from wtforms.fields.choices import SelectField
-from wtforms.fields.simple import StringField, TextAreaField, SubmitField
-from wtforms.validators import InputRequired, DataRequired, Length
+from wtforms.fields.simple import StringField, SubmitField
+from wtforms.validators import InputRequired, DataRequired
 
 from app.db_models import Warehouse
 

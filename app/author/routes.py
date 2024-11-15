@@ -5,7 +5,7 @@ from flask import render_template, flash, url_for, abort
 from werkzeug.utils import redirect
 
 from app import db
-from app.auth.routes import is_admin, get_current_user
+from app.auth.routes import is_admin
 from app.author import author_bp
 from app.author.forms import NewAuthorForm, DeleteAuthorForm, EditAuthorForm
 from app.db_models import Author
