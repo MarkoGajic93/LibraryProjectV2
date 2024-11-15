@@ -16,6 +16,8 @@ class Member(db.Model):
     age = db.Column(db.Integer, nullable=False)
     phone_number = db.Column(db.String(255))
 
+    rents = db.relationship("Rental", back_populates="member")
+
     def __init__(self, name="", email="", password="", age="", phone_number=""):
         self.name = name
         self.email = email
@@ -83,8 +85,9 @@ class Rental(db.Model):
     id = db.Column(PG_UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
     borrow_date = db.Column(db.Date, nullable=False)
     return_date = db.Column(db.Date, nullable=False)
-    member_id = db.Column(db.String, db.ForeignKey("member.email", ondelete="CASCADE"), nullable=False)
+    member_id = db.Column(db.String, db.ForeignKey("member.email", onupdate='CASCADE', ondelete="CASCADE"), nullable=False)
 
+    member = db.relationship("Member", back_populates="rents")
     books = db.relationship("RentalBook", back_populates="rental", cascade="all, delete-orphan")
 
     def __init__(self, borrow_date, return_date, member_id):

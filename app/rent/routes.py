@@ -57,10 +57,7 @@ def view_basket():
         logging.warning(f"Failed attempt to view basket (user is not logged in).")
         return redirect(url_for("home.home"))
 
-    books_in_basket = []
-    basket = session["user"].get("member_basket", {})
-    if basket:
-        books_in_basket = list(basket.values())
+    books_in_basket = list(session["user"].get("member_basket", {}).values())
     restore_basket_form = RestoreBasketForm()
     checkout_form = CheckoutForm()
     return render_template("basket.html", books=books_in_basket, restoreBasketForm=restore_basket_form, checkoutForm=checkout_form)
@@ -86,10 +83,7 @@ def checkout():
         logging.warning(f"Failed attempt to make rent order (user is not logged in).")
         return redirect(url_for("home.home"))
 
-    books = []
-    basket = session["user"].get("member_basket", {})
-    if basket:
-        books = list(basket.keys())
+    books = list(session["user"].get("member_basket", {}).keys())
     if not books:
         flash(f"Your basket is empty.", "danger")
         logging.warning(f"Failed attempt to make rent order (user basket is empty).")
@@ -113,7 +107,7 @@ def checkout():
 
     return redirect(url_for("home.home"))
 
-@rent_bp.route("/rents")
+@rent_bp.route("/")
 def rents():
     member_id = get_current_user().email
     if not member_id:
