@@ -26,7 +26,10 @@ def rent(book_id: uuid.UUID):
             flash("That book doesnt exist", "danger")
             logging.warning(f"Attempt to rent non-existent book.")
             return redirect(url_for("home.home"))
-        if book.warehouses:
+        available = 0
+        for warehouse in book.warehouses:
+            available += warehouse.quantity
+        if available != 0:
             user_basket = session["user"].setdefault('member_basket', {})
             if str(book_id) in user_basket:
                 flash("This book is already in your basket.", "danger")

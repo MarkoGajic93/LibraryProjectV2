@@ -1,5 +1,3 @@
-from enum import member
-
 from flask_wtf import FlaskForm
 from wtforms.fields.choices import SelectField
 from wtforms.fields.simple import StringField, EmailField, SubmitField, PasswordField
